@@ -1,45 +1,35 @@
-# vLLM TurboQuant — overlay on official vLLM image
-# All turboquant changes are Python/Triton, no CUDA compilation needed
-FROM --platform=linux/amd64 vllm/vllm-openai:latest
+# vLLM TurboQuant — source install at boot on GPU node
+FROM --platform=linux/amd64 nvidia/cuda:12.8.1-devel-ubuntu24.04
 
-# SSH server for RunPod / remote access
-RUN apt-get update && \
-    apt-get install -y openssh-server && \
+RUN apt-get update && apt-get install -y \
+    python3.12 python3.12-dev python3.12-venv python3-pip \
+    git openssh-server curl && \
     rm -rf /var/lib/apt/lists/* && \
+    update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1 && \
+    update-alternatives --install /usr/bin/python python /usr/bin/python3.12 1 && \
     mkdir -p /var/run/sshd && \
     echo 'root:root' | chpasswd && \
     sed -i 's/#PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config && \
     sed -i 's/#PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config
 
-ARG SITE=/usr/local/lib/python3.12/dist-packages/vllm
+# Install uv
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+ENV PATH="/root/.local/bin:$PATH"
 
-# Patch config + CLI (adds turboquant25/35 dtype and --enable-turboquant flag)
-COPY vllm/config/cache.py ${SITE}/config/cache.py
-COPY vllm/engine/arg_utils.py ${SITE}/engine/arg_utils.py
+# Copy turboquant source
+COPY . /opt/vllm-turboquant
+WORKDIR /opt/vllm-turboquant
 
-# Patch attention backends and ops
-COPY vllm/v1/attention/backends/triton_attn.py ${SITE}/v1/attention/backends/triton_attn.py
-COPY vllm/v1/attention/selector.py ${SITE}/v1/attention/selector.py
-COPY vllm/v1/attention/ops/triton_prefill_attention.py ${SITE}/v1/attention/ops/triton_prefill_attention.py
-COPY vllm/v1/attention/ops/triton_turboquant_decode.py ${SITE}/v1/attention/ops/triton_turboquant_decode.py
-COPY vllm/v1/attention/ops/triton_turboquant_kv_update.py ${SITE}/v1/attention/ops/triton_turboquant_kv_update.py
-COPY vllm/v1/attention/ops/turboquant_kv_cache.py ${SITE}/v1/attention/ops/turboquant_kv_cache.py
-COPY vllm/v1/attention/ops/turboquant_metadata.py ${SITE}/v1/attention/ops/turboquant_metadata.py
+# Pre-install to bake into image (uses precompiled wheels, no CUDA compile)
+RUN uv venv --python 3.12 /opt/venv && \
+    . /opt/venv/bin/activate && \
+    VLLM_USE_PRECOMPILED=1 uv pip install -e ".[all]"
 
-# Patch worker, kv cache interface, platform, model executor
-COPY vllm/v1/worker/gpu_worker.py ${SITE}/v1/worker/gpu_worker.py
-COPY vllm/v1/worker/utils.py ${SITE}/v1/worker/utils.py
-COPY vllm/v1/kv_cache_interface.py ${SITE}/v1/kv_cache_interface.py
-COPY vllm/platforms/cuda.py ${SITE}/platforms/cuda.py
-COPY vllm/utils/torch_utils.py ${SITE}/utils/torch_utils.py
-COPY vllm/model_executor/layers/attention/attention.py ${SITE}/model_executor/layers/attention/attention.py
-
-# Include benchmark tooling
-COPY benchmarks/generate_turboquant_metadata.py /vllm-workspace/benchmarks/
+ENV PATH="/opt/venv/bin:$PATH"
+ENV VIRTUAL_ENV="/opt/venv"
 
 EXPOSE 22 8000
 
-# Start SSH on boot, then exec vllm serve
 ENTRYPOINT ["/bin/bash", "-c", "/usr/sbin/sshd && exec vllm serve \"$@\"", "--"]
 CMD ["lukealonso/MiniMax-M2.5-NVFP4", \
      "--download-dir", "/workspace/huggingface/hub", \
