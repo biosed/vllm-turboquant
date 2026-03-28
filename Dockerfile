@@ -39,4 +39,6 @@ CMD ["lukealonso/MiniMax-M2.5-NVFP4", \
      "--gpu-memory-utilization", "0.95", \
      "--max-model-len", "32768", \
      "--max-num-batched-tokens", "16384", \
-     "--max-num-seqs", "64"]
+     "--max-num-seqs", "64", \
+     "--enable-auto-tool-choice", \
+     "--tool-call-parser", "minimax_m2"]
