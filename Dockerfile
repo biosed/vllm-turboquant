@@ -18,7 +18,11 @@ RUN apt-get update && apt-get install -y \
 COPY . /opt/vllm-turboquant
 WORKDIR /opt/vllm-turboquant
 
-# Install vLLM from turboquant source using precompiled C/CUDA extensions
+# Create venv and install vLLM from turboquant source
+RUN python3 -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH" \
+    VIRTUAL_ENV="/opt/venv"
+
 RUN VLLM_USE_PRECOMPILED=1 pip install -e ".[all]" && \
     pip install regex && \
     pip cache purge
