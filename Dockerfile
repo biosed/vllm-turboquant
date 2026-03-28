@@ -1,6 +1,6 @@
 # vLLM TurboQuant — overlay on official vLLM image
 # All turboquant changes are Python/Triton, no CUDA compilation needed
-FROM --platform=linux/amd64 vllm/vllm-openai:latest
+FROM vllm/vllm-openai:latest
 
 # SSH server for RunPod / remote access
 RUN apt-get update && \
