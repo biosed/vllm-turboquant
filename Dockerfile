@@ -30,5 +30,18 @@ COPY benchmarks/generate_turboquant_metadata.py /vllm-workspace/benchmarks/
 
 EXPOSE 22 8000
 
-# Start SSH on boot, then exec vllm serve with any passed args
+# Start SSH on boot, then exec vllm serve
 ENTRYPOINT ["/bin/bash", "-c", "/usr/sbin/sshd && exec vllm serve \"$@\"", "--"]
+CMD ["lukealonso/MiniMax-M2.5-NVFP4", \
+     "--download-dir", "/workspace/huggingface/hub", \
+     "--host", "0.0.0.0", "--port", "8000", \
+     "--served-model-name", "MiniMax-M2.5-NVFP4", \
+     "--trust-remote-code", \
+     "--tensor-parallel-size", "1", \
+     "--kv-cache-dtype", "turboquant25", \
+     "--gpu-memory-utilization", "0.95", \
+     "--max-model-len", "190000", \
+     "--max-num-batched-tokens", "16384", \
+     "--max-num-seqs", "64", \
+     "--tool-call-parser", "minimax_m2", \
+     "--reasoning-parser", "minimax_m2_append_think"]
