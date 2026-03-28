@@ -1,6 +1,18 @@
-# vLLM TurboQuant — build from source with precompiled C extensions
+# vLLM TurboQuant — CUDA 12.8 for B200 (SM100) support
 # SM121 checks removed for B200+ compatibility
-FROM --platform=linux/amd64 runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04
+FROM --platform=linux/amd64 nvidia/cuda:12.8.1-devel-ubuntu24.04
+
+# RunPod-compatible: SSH + basic tools
+RUN apt-get update && apt-get install -y \
+    python3.12 python3.12-dev python3.12-venv python3-pip \
+    openssh-server git curl wget && \
+    rm -rf /var/lib/apt/lists/* && \
+    update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1 && \
+    update-alternatives --install /usr/bin/python python /usr/bin/python3.12 1 && \
+    mkdir -p /var/run/sshd && \
+    echo 'root:root' | chpasswd && \
+    sed -i 's/#PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config && \
+    sed -i 's/#PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config
 
 # Copy turboquant source (with SM121 patches applied)
 COPY . /opt/vllm-turboquant
@@ -12,7 +24,6 @@ RUN VLLM_USE_PRECOMPILED=1 pip install -e ".[all]" && \
     pip cache purge
 
 # Include default MiniMax turboquant metadata
-# Users can override with --turboquant-metadata-path at runtime
 COPY minimax_turboquant_kv.json /opt/minimax_turboquant_kv.json
 
 EXPOSE 22 8000
