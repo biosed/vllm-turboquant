@@ -26,7 +26,7 @@ CMD ["lukealonso/MiniMax-M2.5-NVFP4", \
      "--trust-remote-code", \
      "--tensor-parallel-size", "1", \
      "--gpu-memory-utilization", "0.95", \
-     "--max-model-len", "32768", \
+     "--max-model-len", "196608", \
      "--max-num-batched-tokens", "16384", \
      "--max-num-seqs", "64", \
      "--enable-auto-tool-choice", \
