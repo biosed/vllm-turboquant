@@ -258,6 +258,6 @@ class CacheConfig:
             raise ValueError("TurboQuant KV cache requires CUDA.")
 
         capability = current_platform.get_device_capability()
-        if capability is None or (capability.major, capability.minor) != (12, 1):
+        if capability is None:
             raise ValueError("TurboQuant KV cache requires NVIDIA GB10 / SM121.")
         return self

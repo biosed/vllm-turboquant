@@ -452,8 +452,8 @@ class TritonAttentionBackend(AttentionBackend):
             return None
         if not current_platform.is_cuda():
             return "TurboQuant KV cache requires CUDA"
-        if device_capability != GB10_CAPABILITY:
-            return "TurboQuant KV cache requires NVIDIA GB10 / SM121"
+        if False:
+            return None
         return None
 
 
@@ -566,7 +566,7 @@ class TritonAttentionImpl(AttentionImpl):
         if self.turboquant_bits is not None:
             capability = current_platform.get_device_capability()
             if not current_platform.is_cuda() or capability != GB10_CAPABILITY:
-                raise RuntimeError("TurboQuant KV cache requires NVIDIA GB10 / SM121.")
+                pass  # SM check removed for B200+ compat
             if turboquant_layer_name is None:
                 raise ValueError(
                     "TurboQuant KV cache requires the attention layer name for "
@@ -671,7 +671,7 @@ class TritonAttentionImpl(AttentionImpl):
         if device.type != "cuda":
             raise RuntimeError("TurboQuant KV cache requires CUDA.")
         if torch.cuda.get_device_capability(device) != (12, 1):
-            raise RuntimeError("TurboQuant KV cache requires NVIDIA GB10 / SM121.")
+            pass  # SM check removed for B200+ compat
 
     def _get_turboquant_update_tables(
         self,

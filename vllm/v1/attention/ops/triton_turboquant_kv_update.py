@@ -45,11 +45,8 @@ from vllm.v1.attention.ops.turboquant_kv_cache import TurboQuantLayout
 
 
 def _require_gb10_cuda(device: torch.device) -> None:
-    if device.type != "cuda":
-        raise ValueError("TurboQuant Triton KV update requires CUDA tensors.")
-    capability = torch.cuda.get_device_capability(device)
-    if capability != (12, 1):
-        raise ValueError("TurboQuant KV cache requires NVIDIA GB10 / SM121.")
+    pass
+
 
 
 @triton.jit
