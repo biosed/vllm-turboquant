@@ -1,6 +1,6 @@
 # vLLM TurboQuant — overlay on official vLLM image
 # All turboquant changes are Python/Triton, no CUDA compilation needed
-FROM vllm/vllm-openai:latest
+FROM --platform=linux/amd64 vllm/vllm-openai:latest
 
 # SSH server for RunPod / remote access
 RUN apt-get update && \
@@ -28,10 +28,7 @@ COPY vllm/v1/worker/utils.py \
 # Include benchmark tooling
 COPY benchmarks/generate_turboquant_metadata.py /vllm-workspace/benchmarks/
 
-# Startup script: launch SSH + vLLM
-COPY start.sh /start.sh
-RUN chmod +x /start.sh
-
 EXPOSE 22 8000
 
-ENTRYPOINT ["/start.sh"]
+# Start SSH on boot, then exec vllm serve with any passed args
+ENTRYPOINT ["/bin/bash", "-c", "/usr/sbin/sshd && exec vllm serve \"$@\"", "--"]
