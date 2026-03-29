@@ -1,13 +1,17 @@
-# MiniMax-M2.5-NVFP4 on B200 — official vLLM 0.15.1+ for SM100 support
+# MiniMax-M2.5-NVFP4 on B200 — official vLLM v0.18.0 for SM100 support
 FROM vllm/vllm-openai:v0.18.0
 
 # RunPod-compatible: SSH
 RUN apt-get update && apt-get install -y openssh-server && \
     rm -rf /var/lib/apt/lists/* && \
-    mkdir -p /var/run/sshd && \
+    mkdir -p /var/run/sshd /root/.ssh && \
     echo 'root:root' | chpasswd && \
     sed -i 's/#PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config && \
-    sed -i 's/#PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config
+    sed -i 's/#PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config && \
+    chmod 700 /root/.ssh
+
+COPY start.sh /start.sh
+RUN chmod +x /start.sh
 
 EXPOSE 22 8000
 
@@ -18,7 +22,7 @@ ENV CUDA_DEVICE_ORDER=PCI_BUS_ID \
     HF_HOME=/workspace/huggingface \
     HUGGINGFACE_HUB_CACHE=/workspace/huggingface/hub
 
-ENTRYPOINT ["/bin/bash", "-c", "/usr/sbin/sshd && exec vllm serve \"$@\"", "--"]
+ENTRYPOINT ["/start.sh"]
 CMD ["lukealonso/MiniMax-M2.5-NVFP4", \
      "--download-dir", "/workspace/huggingface/hub", \
      "--host", "0.0.0.0", "--port", "8000", \
